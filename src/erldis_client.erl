@@ -1,6 +1,6 @@
 %% @doc This is a	 very similar to erldis_client, but it does
 %% synchronous calls instead of async pipelining. Does so by keeping a queue
-%% of From pids in State.calls, then calls gen_server2:reply when it receives
+%% of From pids in State.calls, then calls erldis_gen_server2:reply when it receives
 %% handle_info({tcp, ...). Therefore, it must get commands on handle_call
 %% instead of handle_cast, which requires direct command sending instead of
 %% using the API in erldis.
@@ -80,13 +80,13 @@ set_call(Client, Cmd, Key, Val) ->
 	set_call(Client, Cmd, Key, erldis_binaries:to_binary(Val)).
 
 subscribe(Client, Cmd, Class, Pid)->
-	case gen_server2:call(Client, {subscribe, Cmd, Class, Pid}, ?default_timeout) of
+	case erldis_gen_server2:call(Client, {subscribe, Cmd, Class, Pid}, ?default_timeout) of
 		{error, Reason} -> throw({error, Reason});
 		Retval -> Retval
 	end.
 
 unsubscribe(Client, Cmd, Class)->
-	case gen_server2:call(Client, {unsubscribe, Cmd, Class}, ?default_timeout) of
+	case erldis_gen_server2:call(Client, {unsubscribe, Cmd, Class}, ?default_timeout) of
 		{error, Reason} -> throw({error, Reason});
 		Retval -> Retval
 	end.
@@ -102,13 +102,13 @@ erlang_timeout(infinity) -> infinity;
 erlang_timeout(V) when is_number(V) -> V + ?default_timeout.
 
 send(Client, Cmd, Timeout) ->
-	Piped = gen_server2:call(Client, is_pipelined),
+	Piped = erldis_gen_server2:call(Client, is_pipelined),
 	
 	if
 		Piped ->
-			gen_server2:cast(Client, {send, Cmd});
+			erldis_gen_server2:cast(Client, {send, Cmd});
 		true ->
-			case gen_server2:call(Client, {send, Cmd}, Timeout) of
+			case erldis_gen_server2:call(Client, {send, Cmd}, Timeout) of
 				{error, Reason} -> throw({error, Reason});
 				Retval -> Retval
 			end
@@ -173,9 +173,9 @@ start(Host, Port, ShouldLink) ->
 start(Host, Port, Options, false) ->
 	% not using start_link because caller may not want to crash if this
 	% server is shutdown
-	gen_server2:start(?MODULE, [Host, Port, false], Options);
+	erldis_gen_server2:start(?MODULE, [Host, Port, false], Options);
 start(Host, Port, Options, true) ->
-	gen_server2:start_link(?MODULE, [Host, Port, true], Options).
+	erldis_gen_server2:start_link(?MODULE, [Host, Port, true], Options).
 
 start(Host, Port, Options, DB, ShouldLink) ->
 	case start(Host, Port, Options, ShouldLink) of
@@ -184,7 +184,7 @@ start(Host, Port, Options, DB, ShouldLink) ->
 	end.
 
 % stop is synchronous so can be sure that client is shutdown
-stop(Client) -> gen_server2:call(Client, disconnect).
+stop(Client) -> erldis_gen_server2:call(Client, disconnect).
 
 % ShouldRegister indicates if the client needs to be stores in the erldis_pool_sup ETS
 init([Host, Port, _ShouldRegister]=Params) ->
@@ -275,7 +275,7 @@ handle_call(get_all_results, From, #redis{pipeline=true, calls=Calls}=State) ->
 		_ ->
 			% We are here earlier than results came, so just make
 			% ourselves wait until stuff is ready.
-			R = fun(V) -> gen_server2:reply(From, V) end,
+			R = fun(V) -> erldis_gen_server2:reply(From, V) end,
 			{noreply, State#redis{reply_caller=R}}
 	end;
 handle_call({send, Cmd}, From, State1) ->
@@ -408,7 +408,7 @@ send_reply(State) ->
 	case queue:out(State#redis.calls) of
 		{{value, From}, Queue} ->
 			Reply = lists:reverse(State#redis.buffer),
-			gen_server2:reply(From, Reply);
+			erldis_gen_server2:reply(From, Reply);
 		{empty, Queue} ->
 			ok
 	end,
@@ -496,7 +496,7 @@ handle_info(_Info, State) ->
 
 terminate(_Reason, State) ->
 	% NOTE: if supervised with brutal_kill, may not be able to reply
-	R = fun(From) -> gen_server2:reply(From, {error, closed}) end,
+	R = fun(From) -> erldis_gen_server2:reply(From, {error, closed}) end,
 	lists:foreach(R, queue:to_list(State#redis.calls)),
 	
 	case State#redis.socket of

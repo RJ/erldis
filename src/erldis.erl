@@ -317,9 +317,9 @@ sort(Client, Key, Extra) when is_binary(Key), is_binary(Extra) ->
 %% Transactions %%
 %%%%%%%%%%%%%%%%%%
 
-get_all_results(Client) -> gen_server2:call(Client, get_all_results).
+get_all_results(Client) -> erldis_gen_server2:call(Client, get_all_results).
 
-set_pipelining(Client, Bool) -> gen_server2:cast(Client, {pipelining, Bool}).
+set_pipelining(Client, Bool) -> erldis_gen_server2:cast(Client, {pipelining, Bool}).
 
 watch(Client, Keys)->
     erldis_client:sr_scall(Client,[ <<"watch">>, Keys]).
