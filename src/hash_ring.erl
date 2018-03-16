@@ -88,7 +88,7 @@ get_item_points(Item, N) ->
 hash_key(Key) when is_binary(Key) ->
     hash_key(binary_to_list(Key));
 hash_key(Key) ->
-  <<Int:160/unsigned-integer>> = crypto:sha(Key),
+  <<Int:160/unsigned-integer>> = crypto:hash(sha, Key),
   Int.
   
 

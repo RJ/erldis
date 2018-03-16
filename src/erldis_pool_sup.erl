@@ -89,4 +89,4 @@ get_pids({Host, Port}) ->
 %%
 get_random_pid({Host, Port}) ->
   Pids = get_pids({Host, Port}),
-  lists:nth(erlang:phash(now(), length(Pids)), Pids).
+  lists:nth(erlang:phash(os:timestamp(), length(Pids)), Pids).

@@ -460,7 +460,7 @@ unregister_name(_Name) -> ok.
 extend_backoff(undefined) ->
     undefined;
 extend_backoff({backoff, InitialTimeout, MinimumTimeout, DesiredHibPeriod}) ->
-    {backoff, InitialTimeout, MinimumTimeout, DesiredHibPeriod, now()}.
+    {backoff, InitialTimeout, MinimumTimeout, DesiredHibPeriod, os:timestamp()}.
 
 %%%========================================================================
 %%% Internal functions
@@ -524,7 +524,7 @@ wake_hib(GS2State = #gs2_state { timeout_state = TS }) ->
                         undefined ->
                             undefined;
                         {SleptAt, TimeoutState} ->
-                            adjust_timeout_state(SleptAt, now(), TimeoutState)
+                            adjust_timeout_state(SleptAt, os:timestamp(), TimeoutState)
                     end,
     post_hibernate(
       drain(GS2State #gs2_state { timeout_state = TimeoutState1 })).
@@ -532,7 +532,7 @@ wake_hib(GS2State = #gs2_state { timeout_state = TS }) ->
 hibernate(GS2State = #gs2_state { timeout_state = TimeoutState }) ->
     TS = case TimeoutState of
              undefined             -> undefined;
-             {backoff, _, _, _, _} -> {now(), TimeoutState}
+             {backoff, _, _, _, _} -> {os:timestamp(), TimeoutState}
          end,
     proc_lib:hibernate(?MODULE, wake_hib,
                        [GS2State #gs2_state { timeout_state = TS }]).
@@ -589,7 +589,7 @@ adjust_timeout_state(SleptAt, AwokeAt, {backoff, CurrentTO, MinimumTO,
             true -> lists:max([MinimumTO, CurrentTO div 2]);
             false -> CurrentTO
         end,
-    {Extra, RandomState1} = random:uniform_s(Base, RandomState),
+    {Extra, RandomState1} = rand:uniform_s(Base, RandomState),
     CurrentTO1 = Base + Extra,
     {backoff, CurrentTO1, MinimumTO, DesiredHibPeriod, RandomState1}.
 

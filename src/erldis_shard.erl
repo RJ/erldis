@@ -108,6 +108,6 @@ client(Key, Type) ->
         [] -> undefined;
         _ ->
             % Get a random host of the given type and get a client from the pool
-            RandomHost = lists:nth(erlang:phash(now(), length(Hosts)), Hosts),
+            RandomHost = lists:nth(erlang:phash(os:timestamp(), length(Hosts)), Hosts),
             erldis_pool_sup:get_random_pid(RandomHost)
     end.
